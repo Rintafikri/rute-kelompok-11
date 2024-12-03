@@ -1,0 +1,1 @@
+var json_KoordinatKakDendi_2 = {"type":"FeatureCollection","name":"KoordinatKakDendi_2","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{"field_1":"110.4007013","field_2":"-7.799917139","field_3":"Rumah kak dendi"},"geometry":{"type":"Point","coordinates":[110.4007013,-7.799917139]}}]}

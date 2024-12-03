@@ -1,0 +1,1 @@
+var json_KoordinatKakAyu_3 = {"type":"FeatureCollection","name":"KoordinatKakAyu_3","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{"field_1":"110.391806","field_2":"-7.863184","field_3":"Rumah kak ayu"},"geometry":{"type":"Point","coordinates":[110.391806,-7.863184]}}]}

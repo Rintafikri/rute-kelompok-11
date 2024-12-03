@@ -1,0 +1,1 @@
+var json_Vertices_4 = {"type":"FeatureCollection","name":"Vertices_4","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{"ID":0.0},"geometry":{"type":"Point","coordinates":[110.400701,-7.799917]}},{"type":"Feature","properties":{"ID":1.0},"geometry":{"type":"Point","coordinates":[110.409438,-7.790464]}}]}

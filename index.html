@@ -1,0 +1,2477 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/multi-style-layer.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="data/Koordinatanggotakelompok_1.js"></script>
+        <script src="data/KoordinatKakDendi_2.js"></script>
+        <script src="data/KoordinatKakAyu_3.js"></script>
+        <script src="data/Vertices_4.js"></script>
+        <script src="data/RuteBilaKakDendi_5.js"></script>
+        <script src="data/RuteRiskaKakDendi_6.js"></script>
+        <script src="data/RuteNithaKakDendi_7.js"></script>
+        <script src="data/RuteElaKakDendi_8.js"></script>
+        <script src="data/RuteBayuKakDendi_9.js"></script>
+        <script src="data/RuteIlhamKakDendi_10.js"></script>
+        <script src="data/RuteRintaKakDendi_11.js"></script>
+        <script src="data/RutePutriKakDendi_12.js"></script>
+        <script src="data/RuteSalmanKakDendi_13.js"></script>
+        <script src="data/RuteErlinKakDendi_14.js"></script>
+        <script src="data/RuteBilaKakAyu_15.js"></script>
+        <script src="data/RuteRiskaKakAyu_16.js"></script>
+        <script src="data/RuteNithaKakAyu_17.js"></script>
+        <script src="data/RuteElaKakAyu_18.js"></script>
+        <script src="data/RuteBayuKakAyu_19.js"></script>
+        <script src="data/RuteIlhamKakAyu_20.js"></script>
+        <script src="data/RuteRintaKakAyu_21.js"></script>
+        <script src="data/RutePutriKakAyu_22.js"></script>
+        <script src="data/RuteSalmanKakAyu_23.js"></script>
+        <script src="data/RuteErlinKakAyu_24.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-7.924039958165079,110.1768487320111],[-7.638896468224769,110.60114224504228]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_GoogleSatellite_0');
+        map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
+        var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_GoogleSatellite_0;
+        map.addLayer(layer_GoogleSatellite_0);
+        function pop_Koordinatanggotakelompok_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['field_1'] !== null ? autolinker.link(feature.properties['field_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['field_2'] !== null ? autolinker.link(feature.properties['field_2'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['field_3'] !== null ? autolinker.link(feature.properties['field_3'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Koordinatanggotakelompok_1_0() {
+            return {
+                pane: 'pane_Koordinatanggotakelompok_1',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,127,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Koordinatanggotakelompok_1');
+        map.getPane('pane_Koordinatanggotakelompok_1').style.zIndex = 401;
+        map.getPane('pane_Koordinatanggotakelompok_1').style['mix-blend-mode'] = 'normal';
+        var layer_Koordinatanggotakelompok_1 = new L.geoJson(json_Koordinatanggotakelompok_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Koordinatanggotakelompok_1',
+            layerName: 'layer_Koordinatanggotakelompok_1',
+            pane: 'pane_Koordinatanggotakelompok_1',
+            onEachFeature: pop_Koordinatanggotakelompok_1,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Koordinatanggotakelompok_1_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Koordinatanggotakelompok_1);
+        map.addLayer(layer_Koordinatanggotakelompok_1);
+        function pop_KoordinatKakDendi_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['field_1'] !== null ? autolinker.link(feature.properties['field_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['field_2'] !== null ? autolinker.link(feature.properties['field_2'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['field_3'] !== null ? autolinker.link(feature.properties['field_3'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_KoordinatKakDendi_2_0() {
+            return {
+                pane: 'pane_KoordinatKakDendi_2',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,246,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_KoordinatKakDendi_2');
+        map.getPane('pane_KoordinatKakDendi_2').style.zIndex = 402;
+        map.getPane('pane_KoordinatKakDendi_2').style['mix-blend-mode'] = 'normal';
+        var layer_KoordinatKakDendi_2 = new L.geoJson(json_KoordinatKakDendi_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_KoordinatKakDendi_2',
+            layerName: 'layer_KoordinatKakDendi_2',
+            pane: 'pane_KoordinatKakDendi_2',
+            onEachFeature: pop_KoordinatKakDendi_2,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_KoordinatKakDendi_2_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_KoordinatKakDendi_2);
+        map.addLayer(layer_KoordinatKakDendi_2);
+        function pop_KoordinatKakAyu_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['field_1'] !== null ? autolinker.link(feature.properties['field_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['field_2'] !== null ? autolinker.link(feature.properties['field_2'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['field_3'] !== null ? autolinker.link(feature.properties['field_3'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_KoordinatKakAyu_3_0() {
+            return {
+                pane: 'pane_KoordinatKakAyu_3',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,246,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_KoordinatKakAyu_3');
+        map.getPane('pane_KoordinatKakAyu_3').style.zIndex = 403;
+        map.getPane('pane_KoordinatKakAyu_3').style['mix-blend-mode'] = 'normal';
+        var layer_KoordinatKakAyu_3 = new L.geoJson(json_KoordinatKakAyu_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_KoordinatKakAyu_3',
+            layerName: 'layer_KoordinatKakAyu_3',
+            pane: 'pane_KoordinatKakAyu_3',
+            onEachFeature: pop_KoordinatKakAyu_3,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_KoordinatKakAyu_3_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_KoordinatKakAyu_3);
+        map.addLayer(layer_KoordinatKakAyu_3);
+        function pop_Vertices_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ID'] !== null ? autolinker.link(feature.properties['ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Vertices_4_0() {
+            return {
+                pane: 'pane_Vertices_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(183,72,75,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Vertices_4');
+        map.getPane('pane_Vertices_4').style.zIndex = 404;
+        map.getPane('pane_Vertices_4').style['mix-blend-mode'] = 'normal';
+        var layer_Vertices_4 = new L.geoJson(json_Vertices_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Vertices_4',
+            layerName: 'layer_Vertices_4',
+            pane: 'pane_Vertices_4',
+            onEachFeature: pop_Vertices_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Vertices_4_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Vertices_4);
+        map.addLayer(layer_Vertices_4);
+        function pop_RuteBilaKakDendi_5(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteBilaKakDendi_5_0() {
+            return {
+                pane: 'pane_RuteBilaKakDendi_5',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteBilaKakDendi_5_1() {
+            return {
+                pane: 'pane_RuteBilaKakDendi_5',
+                opacity: 1,
+                color: 'rgba(198,40,40,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteBilaKakDendi_5_2() {
+            return {
+                pane: 'pane_RuteBilaKakDendi_5',
+                interactive: true,
+            }
+        }
+        function style_RuteBilaKakDendi_5_3() {
+            return {
+                pane: 'pane_RuteBilaKakDendi_5',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteBilaKakDendi_5');
+        map.getPane('pane_RuteBilaKakDendi_5').style.zIndex = 405;
+        map.getPane('pane_RuteBilaKakDendi_5').style['mix-blend-mode'] = 'normal';
+        var layer_RuteBilaKakDendi_5 = new L.geoJson.multiStyle(json_RuteBilaKakDendi_5, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteBilaKakDendi_5',
+            layerName: 'layer_RuteBilaKakDendi_5',
+            pane: 'pane_RuteBilaKakDendi_5',
+            onEachFeature: pop_RuteBilaKakDendi_5,
+            styles: [style_RuteBilaKakDendi_5_0,style_RuteBilaKakDendi_5_1,style_RuteBilaKakDendi_5_2,style_RuteBilaKakDendi_5_3,]
+        });
+        bounds_group.addLayer(layer_RuteBilaKakDendi_5);
+        map.addLayer(layer_RuteBilaKakDendi_5);
+        function pop_RuteRiskaKakDendi_6(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteRiskaKakDendi_6_0() {
+            return {
+                pane: 'pane_RuteRiskaKakDendi_6',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteRiskaKakDendi_6_1() {
+            return {
+                pane: 'pane_RuteRiskaKakDendi_6',
+                opacity: 1,
+                color: 'rgba(255,127,0,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteRiskaKakDendi_6_2() {
+            return {
+                pane: 'pane_RuteRiskaKakDendi_6',
+                interactive: true,
+            }
+        }
+        function style_RuteRiskaKakDendi_6_3() {
+            return {
+                pane: 'pane_RuteRiskaKakDendi_6',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteRiskaKakDendi_6');
+        map.getPane('pane_RuteRiskaKakDendi_6').style.zIndex = 406;
+        map.getPane('pane_RuteRiskaKakDendi_6').style['mix-blend-mode'] = 'normal';
+        var layer_RuteRiskaKakDendi_6 = new L.geoJson.multiStyle(json_RuteRiskaKakDendi_6, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteRiskaKakDendi_6',
+            layerName: 'layer_RuteRiskaKakDendi_6',
+            pane: 'pane_RuteRiskaKakDendi_6',
+            onEachFeature: pop_RuteRiskaKakDendi_6,
+            styles: [style_RuteRiskaKakDendi_6_0,style_RuteRiskaKakDendi_6_1,style_RuteRiskaKakDendi_6_2,style_RuteRiskaKakDendi_6_3,]
+        });
+        bounds_group.addLayer(layer_RuteRiskaKakDendi_6);
+        map.addLayer(layer_RuteRiskaKakDendi_6);
+        function pop_RuteNithaKakDendi_7(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteNithaKakDendi_7_0() {
+            return {
+                pane: 'pane_RuteNithaKakDendi_7',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteNithaKakDendi_7_1() {
+            return {
+                pane: 'pane_RuteNithaKakDendi_7',
+                opacity: 1,
+                color: 'rgba(253,191,111,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteNithaKakDendi_7_2() {
+            return {
+                pane: 'pane_RuteNithaKakDendi_7',
+                interactive: true,
+            }
+        }
+        function style_RuteNithaKakDendi_7_3() {
+            return {
+                pane: 'pane_RuteNithaKakDendi_7',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteNithaKakDendi_7');
+        map.getPane('pane_RuteNithaKakDendi_7').style.zIndex = 407;
+        map.getPane('pane_RuteNithaKakDendi_7').style['mix-blend-mode'] = 'normal';
+        var layer_RuteNithaKakDendi_7 = new L.geoJson.multiStyle(json_RuteNithaKakDendi_7, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteNithaKakDendi_7',
+            layerName: 'layer_RuteNithaKakDendi_7',
+            pane: 'pane_RuteNithaKakDendi_7',
+            onEachFeature: pop_RuteNithaKakDendi_7,
+            styles: [style_RuteNithaKakDendi_7_0,style_RuteNithaKakDendi_7_1,style_RuteNithaKakDendi_7_2,style_RuteNithaKakDendi_7_3,]
+        });
+        bounds_group.addLayer(layer_RuteNithaKakDendi_7);
+        map.addLayer(layer_RuteNithaKakDendi_7);
+        function pop_RuteElaKakDendi_8(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteElaKakDendi_8_0() {
+            return {
+                pane: 'pane_RuteElaKakDendi_8',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteElaKakDendi_8_1() {
+            return {
+                pane: 'pane_RuteElaKakDendi_8',
+                opacity: 1,
+                color: 'rgba(251,154,153,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteElaKakDendi_8_2() {
+            return {
+                pane: 'pane_RuteElaKakDendi_8',
+                interactive: true,
+            }
+        }
+        function style_RuteElaKakDendi_8_3() {
+            return {
+                pane: 'pane_RuteElaKakDendi_8',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteElaKakDendi_8');
+        map.getPane('pane_RuteElaKakDendi_8').style.zIndex = 408;
+        map.getPane('pane_RuteElaKakDendi_8').style['mix-blend-mode'] = 'normal';
+        var layer_RuteElaKakDendi_8 = new L.geoJson.multiStyle(json_RuteElaKakDendi_8, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteElaKakDendi_8',
+            layerName: 'layer_RuteElaKakDendi_8',
+            pane: 'pane_RuteElaKakDendi_8',
+            onEachFeature: pop_RuteElaKakDendi_8,
+            styles: [style_RuteElaKakDendi_8_0,style_RuteElaKakDendi_8_1,style_RuteElaKakDendi_8_2,style_RuteElaKakDendi_8_3,]
+        });
+        bounds_group.addLayer(layer_RuteElaKakDendi_8);
+        map.addLayer(layer_RuteElaKakDendi_8);
+        function pop_RuteBayuKakDendi_9(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteBayuKakDendi_9_0() {
+            return {
+                pane: 'pane_RuteBayuKakDendi_9',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteBayuKakDendi_9_1() {
+            return {
+                pane: 'pane_RuteBayuKakDendi_9',
+                opacity: 1,
+                color: 'rgba(51,160,44,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteBayuKakDendi_9_2() {
+            return {
+                pane: 'pane_RuteBayuKakDendi_9',
+                interactive: true,
+            }
+        }
+        function style_RuteBayuKakDendi_9_3() {
+            return {
+                pane: 'pane_RuteBayuKakDendi_9',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteBayuKakDendi_9');
+        map.getPane('pane_RuteBayuKakDendi_9').style.zIndex = 409;
+        map.getPane('pane_RuteBayuKakDendi_9').style['mix-blend-mode'] = 'normal';
+        var layer_RuteBayuKakDendi_9 = new L.geoJson.multiStyle(json_RuteBayuKakDendi_9, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteBayuKakDendi_9',
+            layerName: 'layer_RuteBayuKakDendi_9',
+            pane: 'pane_RuteBayuKakDendi_9',
+            onEachFeature: pop_RuteBayuKakDendi_9,
+            styles: [style_RuteBayuKakDendi_9_0,style_RuteBayuKakDendi_9_1,style_RuteBayuKakDendi_9_2,style_RuteBayuKakDendi_9_3,]
+        });
+        bounds_group.addLayer(layer_RuteBayuKakDendi_9);
+        map.addLayer(layer_RuteBayuKakDendi_9);
+        function pop_RuteIlhamKakDendi_10(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteIlhamKakDendi_10_0() {
+            return {
+                pane: 'pane_RuteIlhamKakDendi_10',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteIlhamKakDendi_10_1() {
+            return {
+                pane: 'pane_RuteIlhamKakDendi_10',
+                opacity: 1,
+                color: 'rgba(178,223,138,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteIlhamKakDendi_10_2() {
+            return {
+                pane: 'pane_RuteIlhamKakDendi_10',
+                interactive: true,
+            }
+        }
+        function style_RuteIlhamKakDendi_10_3() {
+            return {
+                pane: 'pane_RuteIlhamKakDendi_10',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteIlhamKakDendi_10');
+        map.getPane('pane_RuteIlhamKakDendi_10').style.zIndex = 410;
+        map.getPane('pane_RuteIlhamKakDendi_10').style['mix-blend-mode'] = 'normal';
+        var layer_RuteIlhamKakDendi_10 = new L.geoJson.multiStyle(json_RuteIlhamKakDendi_10, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteIlhamKakDendi_10',
+            layerName: 'layer_RuteIlhamKakDendi_10',
+            pane: 'pane_RuteIlhamKakDendi_10',
+            onEachFeature: pop_RuteIlhamKakDendi_10,
+            styles: [style_RuteIlhamKakDendi_10_0,style_RuteIlhamKakDendi_10_1,style_RuteIlhamKakDendi_10_2,style_RuteIlhamKakDendi_10_3,]
+        });
+        bounds_group.addLayer(layer_RuteIlhamKakDendi_10);
+        map.addLayer(layer_RuteIlhamKakDendi_10);
+        function pop_RuteRintaKakDendi_11(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteRintaKakDendi_11_0() {
+            return {
+                pane: 'pane_RuteRintaKakDendi_11',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteRintaKakDendi_11_1() {
+            return {
+                pane: 'pane_RuteRintaKakDendi_11',
+                opacity: 1,
+                color: 'rgba(31,120,180,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteRintaKakDendi_11_2() {
+            return {
+                pane: 'pane_RuteRintaKakDendi_11',
+                interactive: true,
+            }
+        }
+        function style_RuteRintaKakDendi_11_3() {
+            return {
+                pane: 'pane_RuteRintaKakDendi_11',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteRintaKakDendi_11');
+        map.getPane('pane_RuteRintaKakDendi_11').style.zIndex = 411;
+        map.getPane('pane_RuteRintaKakDendi_11').style['mix-blend-mode'] = 'normal';
+        var layer_RuteRintaKakDendi_11 = new L.geoJson.multiStyle(json_RuteRintaKakDendi_11, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteRintaKakDendi_11',
+            layerName: 'layer_RuteRintaKakDendi_11',
+            pane: 'pane_RuteRintaKakDendi_11',
+            onEachFeature: pop_RuteRintaKakDendi_11,
+            styles: [style_RuteRintaKakDendi_11_0,style_RuteRintaKakDendi_11_1,style_RuteRintaKakDendi_11_2,style_RuteRintaKakDendi_11_3,]
+        });
+        bounds_group.addLayer(layer_RuteRintaKakDendi_11);
+        map.addLayer(layer_RuteRintaKakDendi_11);
+        function pop_RutePutriKakDendi_12(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RutePutriKakDendi_12_0() {
+            return {
+                pane: 'pane_RutePutriKakDendi_12',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RutePutriKakDendi_12_1() {
+            return {
+                pane: 'pane_RutePutriKakDendi_12',
+                opacity: 1,
+                color: 'rgba(166,206,227,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RutePutriKakDendi_12_2() {
+            return {
+                pane: 'pane_RutePutriKakDendi_12',
+                interactive: true,
+            }
+        }
+        function style_RutePutriKakDendi_12_3() {
+            return {
+                pane: 'pane_RutePutriKakDendi_12',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RutePutriKakDendi_12');
+        map.getPane('pane_RutePutriKakDendi_12').style.zIndex = 412;
+        map.getPane('pane_RutePutriKakDendi_12').style['mix-blend-mode'] = 'normal';
+        var layer_RutePutriKakDendi_12 = new L.geoJson.multiStyle(json_RutePutriKakDendi_12, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RutePutriKakDendi_12',
+            layerName: 'layer_RutePutriKakDendi_12',
+            pane: 'pane_RutePutriKakDendi_12',
+            onEachFeature: pop_RutePutriKakDendi_12,
+            styles: [style_RutePutriKakDendi_12_0,style_RutePutriKakDendi_12_1,style_RutePutriKakDendi_12_2,style_RutePutriKakDendi_12_3,]
+        });
+        bounds_group.addLayer(layer_RutePutriKakDendi_12);
+        map.addLayer(layer_RutePutriKakDendi_12);
+        function pop_RuteSalmanKakDendi_13(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteSalmanKakDendi_13_0() {
+            return {
+                pane: 'pane_RuteSalmanKakDendi_13',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteSalmanKakDendi_13_1() {
+            return {
+                pane: 'pane_RuteSalmanKakDendi_13',
+                opacity: 1,
+                color: 'rgba(13,255,41,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteSalmanKakDendi_13_2() {
+            return {
+                pane: 'pane_RuteSalmanKakDendi_13',
+                interactive: true,
+            }
+        }
+        function style_RuteSalmanKakDendi_13_3() {
+            return {
+                pane: 'pane_RuteSalmanKakDendi_13',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteSalmanKakDendi_13');
+        map.getPane('pane_RuteSalmanKakDendi_13').style.zIndex = 413;
+        map.getPane('pane_RuteSalmanKakDendi_13').style['mix-blend-mode'] = 'normal';
+        var layer_RuteSalmanKakDendi_13 = new L.geoJson.multiStyle(json_RuteSalmanKakDendi_13, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteSalmanKakDendi_13',
+            layerName: 'layer_RuteSalmanKakDendi_13',
+            pane: 'pane_RuteSalmanKakDendi_13',
+            onEachFeature: pop_RuteSalmanKakDendi_13,
+            styles: [style_RuteSalmanKakDendi_13_0,style_RuteSalmanKakDendi_13_1,style_RuteSalmanKakDendi_13_2,style_RuteSalmanKakDendi_13_3,]
+        });
+        bounds_group.addLayer(layer_RuteSalmanKakDendi_13);
+        map.addLayer(layer_RuteSalmanKakDendi_13);
+        function pop_RuteErlinKakDendi_14(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteErlinKakDendi_14_0() {
+            return {
+                pane: 'pane_RuteErlinKakDendi_14',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteErlinKakDendi_14_1() {
+            return {
+                pane: 'pane_RuteErlinKakDendi_14',
+                opacity: 1,
+                color: 'rgba(173,68,71,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteErlinKakDendi_14_2() {
+            return {
+                pane: 'pane_RuteErlinKakDendi_14',
+                interactive: true,
+            }
+        }
+        function style_RuteErlinKakDendi_14_3() {
+            return {
+                pane: 'pane_RuteErlinKakDendi_14',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteErlinKakDendi_14');
+        map.getPane('pane_RuteErlinKakDendi_14').style.zIndex = 414;
+        map.getPane('pane_RuteErlinKakDendi_14').style['mix-blend-mode'] = 'normal';
+        var layer_RuteErlinKakDendi_14 = new L.geoJson.multiStyle(json_RuteErlinKakDendi_14, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteErlinKakDendi_14',
+            layerName: 'layer_RuteErlinKakDendi_14',
+            pane: 'pane_RuteErlinKakDendi_14',
+            onEachFeature: pop_RuteErlinKakDendi_14,
+            styles: [style_RuteErlinKakDendi_14_0,style_RuteErlinKakDendi_14_1,style_RuteErlinKakDendi_14_2,style_RuteErlinKakDendi_14_3,]
+        });
+        bounds_group.addLayer(layer_RuteErlinKakDendi_14);
+        map.addLayer(layer_RuteErlinKakDendi_14);
+        function pop_RuteBilaKakAyu_15(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteBilaKakAyu_15_0() {
+            return {
+                pane: 'pane_RuteBilaKakAyu_15',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteBilaKakAyu_15_1() {
+            return {
+                pane: 'pane_RuteBilaKakAyu_15',
+                opacity: 1,
+                color: 'rgba(198,40,40,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteBilaKakAyu_15_2() {
+            return {
+                pane: 'pane_RuteBilaKakAyu_15',
+                interactive: true,
+            }
+        }
+        function style_RuteBilaKakAyu_15_3() {
+            return {
+                pane: 'pane_RuteBilaKakAyu_15',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteBilaKakAyu_15');
+        map.getPane('pane_RuteBilaKakAyu_15').style.zIndex = 415;
+        map.getPane('pane_RuteBilaKakAyu_15').style['mix-blend-mode'] = 'normal';
+        var layer_RuteBilaKakAyu_15 = new L.geoJson.multiStyle(json_RuteBilaKakAyu_15, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteBilaKakAyu_15',
+            layerName: 'layer_RuteBilaKakAyu_15',
+            pane: 'pane_RuteBilaKakAyu_15',
+            onEachFeature: pop_RuteBilaKakAyu_15,
+            styles: [style_RuteBilaKakAyu_15_0,style_RuteBilaKakAyu_15_1,style_RuteBilaKakAyu_15_2,style_RuteBilaKakAyu_15_3,]
+        });
+        bounds_group.addLayer(layer_RuteBilaKakAyu_15);
+        map.addLayer(layer_RuteBilaKakAyu_15);
+        function pop_RuteRiskaKakAyu_16(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteRiskaKakAyu_16_0() {
+            return {
+                pane: 'pane_RuteRiskaKakAyu_16',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteRiskaKakAyu_16_1() {
+            return {
+                pane: 'pane_RuteRiskaKakAyu_16',
+                opacity: 1,
+                color: 'rgba(255,127,0,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteRiskaKakAyu_16_2() {
+            return {
+                pane: 'pane_RuteRiskaKakAyu_16',
+                interactive: true,
+            }
+        }
+        function style_RuteRiskaKakAyu_16_3() {
+            return {
+                pane: 'pane_RuteRiskaKakAyu_16',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteRiskaKakAyu_16');
+        map.getPane('pane_RuteRiskaKakAyu_16').style.zIndex = 416;
+        map.getPane('pane_RuteRiskaKakAyu_16').style['mix-blend-mode'] = 'normal';
+        var layer_RuteRiskaKakAyu_16 = new L.geoJson.multiStyle(json_RuteRiskaKakAyu_16, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteRiskaKakAyu_16',
+            layerName: 'layer_RuteRiskaKakAyu_16',
+            pane: 'pane_RuteRiskaKakAyu_16',
+            onEachFeature: pop_RuteRiskaKakAyu_16,
+            styles: [style_RuteRiskaKakAyu_16_0,style_RuteRiskaKakAyu_16_1,style_RuteRiskaKakAyu_16_2,style_RuteRiskaKakAyu_16_3,]
+        });
+        bounds_group.addLayer(layer_RuteRiskaKakAyu_16);
+        map.addLayer(layer_RuteRiskaKakAyu_16);
+        function pop_RuteNithaKakAyu_17(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteNithaKakAyu_17_0() {
+            return {
+                pane: 'pane_RuteNithaKakAyu_17',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteNithaKakAyu_17_1() {
+            return {
+                pane: 'pane_RuteNithaKakAyu_17',
+                opacity: 1,
+                color: 'rgba(253,191,111,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteNithaKakAyu_17_2() {
+            return {
+                pane: 'pane_RuteNithaKakAyu_17',
+                interactive: true,
+            }
+        }
+        function style_RuteNithaKakAyu_17_3() {
+            return {
+                pane: 'pane_RuteNithaKakAyu_17',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteNithaKakAyu_17');
+        map.getPane('pane_RuteNithaKakAyu_17').style.zIndex = 417;
+        map.getPane('pane_RuteNithaKakAyu_17').style['mix-blend-mode'] = 'normal';
+        var layer_RuteNithaKakAyu_17 = new L.geoJson.multiStyle(json_RuteNithaKakAyu_17, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteNithaKakAyu_17',
+            layerName: 'layer_RuteNithaKakAyu_17',
+            pane: 'pane_RuteNithaKakAyu_17',
+            onEachFeature: pop_RuteNithaKakAyu_17,
+            styles: [style_RuteNithaKakAyu_17_0,style_RuteNithaKakAyu_17_1,style_RuteNithaKakAyu_17_2,style_RuteNithaKakAyu_17_3,]
+        });
+        bounds_group.addLayer(layer_RuteNithaKakAyu_17);
+        map.addLayer(layer_RuteNithaKakAyu_17);
+        function pop_RuteElaKakAyu_18(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteElaKakAyu_18_0() {
+            return {
+                pane: 'pane_RuteElaKakAyu_18',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteElaKakAyu_18_1() {
+            return {
+                pane: 'pane_RuteElaKakAyu_18',
+                opacity: 1,
+                color: 'rgba(251,154,153,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteElaKakAyu_18_2() {
+            return {
+                pane: 'pane_RuteElaKakAyu_18',
+                interactive: true,
+            }
+        }
+        function style_RuteElaKakAyu_18_3() {
+            return {
+                pane: 'pane_RuteElaKakAyu_18',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteElaKakAyu_18');
+        map.getPane('pane_RuteElaKakAyu_18').style.zIndex = 418;
+        map.getPane('pane_RuteElaKakAyu_18').style['mix-blend-mode'] = 'normal';
+        var layer_RuteElaKakAyu_18 = new L.geoJson.multiStyle(json_RuteElaKakAyu_18, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteElaKakAyu_18',
+            layerName: 'layer_RuteElaKakAyu_18',
+            pane: 'pane_RuteElaKakAyu_18',
+            onEachFeature: pop_RuteElaKakAyu_18,
+            styles: [style_RuteElaKakAyu_18_0,style_RuteElaKakAyu_18_1,style_RuteElaKakAyu_18_2,style_RuteElaKakAyu_18_3,]
+        });
+        bounds_group.addLayer(layer_RuteElaKakAyu_18);
+        map.addLayer(layer_RuteElaKakAyu_18);
+        function pop_RuteBayuKakAyu_19(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteBayuKakAyu_19_0() {
+            return {
+                pane: 'pane_RuteBayuKakAyu_19',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteBayuKakAyu_19_1() {
+            return {
+                pane: 'pane_RuteBayuKakAyu_19',
+                opacity: 1,
+                color: 'rgba(51,160,44,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteBayuKakAyu_19_2() {
+            return {
+                pane: 'pane_RuteBayuKakAyu_19',
+                interactive: true,
+            }
+        }
+        function style_RuteBayuKakAyu_19_3() {
+            return {
+                pane: 'pane_RuteBayuKakAyu_19',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteBayuKakAyu_19');
+        map.getPane('pane_RuteBayuKakAyu_19').style.zIndex = 419;
+        map.getPane('pane_RuteBayuKakAyu_19').style['mix-blend-mode'] = 'normal';
+        var layer_RuteBayuKakAyu_19 = new L.geoJson.multiStyle(json_RuteBayuKakAyu_19, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteBayuKakAyu_19',
+            layerName: 'layer_RuteBayuKakAyu_19',
+            pane: 'pane_RuteBayuKakAyu_19',
+            onEachFeature: pop_RuteBayuKakAyu_19,
+            styles: [style_RuteBayuKakAyu_19_0,style_RuteBayuKakAyu_19_1,style_RuteBayuKakAyu_19_2,style_RuteBayuKakAyu_19_3,]
+        });
+        bounds_group.addLayer(layer_RuteBayuKakAyu_19);
+        map.addLayer(layer_RuteBayuKakAyu_19);
+        function pop_RuteIlhamKakAyu_20(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteIlhamKakAyu_20_0() {
+            return {
+                pane: 'pane_RuteIlhamKakAyu_20',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteIlhamKakAyu_20_1() {
+            return {
+                pane: 'pane_RuteIlhamKakAyu_20',
+                opacity: 1,
+                color: 'rgba(178,223,138,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteIlhamKakAyu_20_2() {
+            return {
+                pane: 'pane_RuteIlhamKakAyu_20',
+                interactive: true,
+            }
+        }
+        function style_RuteIlhamKakAyu_20_3() {
+            return {
+                pane: 'pane_RuteIlhamKakAyu_20',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteIlhamKakAyu_20');
+        map.getPane('pane_RuteIlhamKakAyu_20').style.zIndex = 420;
+        map.getPane('pane_RuteIlhamKakAyu_20').style['mix-blend-mode'] = 'normal';
+        var layer_RuteIlhamKakAyu_20 = new L.geoJson.multiStyle(json_RuteIlhamKakAyu_20, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteIlhamKakAyu_20',
+            layerName: 'layer_RuteIlhamKakAyu_20',
+            pane: 'pane_RuteIlhamKakAyu_20',
+            onEachFeature: pop_RuteIlhamKakAyu_20,
+            styles: [style_RuteIlhamKakAyu_20_0,style_RuteIlhamKakAyu_20_1,style_RuteIlhamKakAyu_20_2,style_RuteIlhamKakAyu_20_3,]
+        });
+        bounds_group.addLayer(layer_RuteIlhamKakAyu_20);
+        map.addLayer(layer_RuteIlhamKakAyu_20);
+        function pop_RuteRintaKakAyu_21(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteRintaKakAyu_21_0() {
+            return {
+                pane: 'pane_RuteRintaKakAyu_21',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteRintaKakAyu_21_1() {
+            return {
+                pane: 'pane_RuteRintaKakAyu_21',
+                opacity: 1,
+                color: 'rgba(31,120,180,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteRintaKakAyu_21_2() {
+            return {
+                pane: 'pane_RuteRintaKakAyu_21',
+                interactive: true,
+            }
+        }
+        function style_RuteRintaKakAyu_21_3() {
+            return {
+                pane: 'pane_RuteRintaKakAyu_21',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteRintaKakAyu_21');
+        map.getPane('pane_RuteRintaKakAyu_21').style.zIndex = 421;
+        map.getPane('pane_RuteRintaKakAyu_21').style['mix-blend-mode'] = 'normal';
+        var layer_RuteRintaKakAyu_21 = new L.geoJson.multiStyle(json_RuteRintaKakAyu_21, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteRintaKakAyu_21',
+            layerName: 'layer_RuteRintaKakAyu_21',
+            pane: 'pane_RuteRintaKakAyu_21',
+            onEachFeature: pop_RuteRintaKakAyu_21,
+            styles: [style_RuteRintaKakAyu_21_0,style_RuteRintaKakAyu_21_1,style_RuteRintaKakAyu_21_2,style_RuteRintaKakAyu_21_3,]
+        });
+        bounds_group.addLayer(layer_RuteRintaKakAyu_21);
+        map.addLayer(layer_RuteRintaKakAyu_21);
+        function pop_RutePutriKakAyu_22(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RutePutriKakAyu_22_0() {
+            return {
+                pane: 'pane_RutePutriKakAyu_22',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RutePutriKakAyu_22_1() {
+            return {
+                pane: 'pane_RutePutriKakAyu_22',
+                opacity: 1,
+                color: 'rgba(166,206,227,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RutePutriKakAyu_22_2() {
+            return {
+                pane: 'pane_RutePutriKakAyu_22',
+                interactive: true,
+            }
+        }
+        function style_RutePutriKakAyu_22_3() {
+            return {
+                pane: 'pane_RutePutriKakAyu_22',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RutePutriKakAyu_22');
+        map.getPane('pane_RutePutriKakAyu_22').style.zIndex = 422;
+        map.getPane('pane_RutePutriKakAyu_22').style['mix-blend-mode'] = 'normal';
+        var layer_RutePutriKakAyu_22 = new L.geoJson.multiStyle(json_RutePutriKakAyu_22, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RutePutriKakAyu_22',
+            layerName: 'layer_RutePutriKakAyu_22',
+            pane: 'pane_RutePutriKakAyu_22',
+            onEachFeature: pop_RutePutriKakAyu_22,
+            styles: [style_RutePutriKakAyu_22_0,style_RutePutriKakAyu_22_1,style_RutePutriKakAyu_22_2,style_RutePutriKakAyu_22_3,]
+        });
+        bounds_group.addLayer(layer_RutePutriKakAyu_22);
+        map.addLayer(layer_RutePutriKakAyu_22);
+        function pop_RuteSalmanKakAyu_23(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteSalmanKakAyu_23_0() {
+            return {
+                pane: 'pane_RuteSalmanKakAyu_23',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteSalmanKakAyu_23_1() {
+            return {
+                pane: 'pane_RuteSalmanKakAyu_23',
+                opacity: 1,
+                color: 'rgba(13,255,41,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteSalmanKakAyu_23_2() {
+            return {
+                pane: 'pane_RuteSalmanKakAyu_23',
+                interactive: true,
+            }
+        }
+        function style_RuteSalmanKakAyu_23_3() {
+            return {
+                pane: 'pane_RuteSalmanKakAyu_23',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteSalmanKakAyu_23');
+        map.getPane('pane_RuteSalmanKakAyu_23').style.zIndex = 423;
+        map.getPane('pane_RuteSalmanKakAyu_23').style['mix-blend-mode'] = 'normal';
+        var layer_RuteSalmanKakAyu_23 = new L.geoJson.multiStyle(json_RuteSalmanKakAyu_23, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteSalmanKakAyu_23',
+            layerName: 'layer_RuteSalmanKakAyu_23',
+            pane: 'pane_RuteSalmanKakAyu_23',
+            onEachFeature: pop_RuteSalmanKakAyu_23,
+            styles: [style_RuteSalmanKakAyu_23_0,style_RuteSalmanKakAyu_23_1,style_RuteSalmanKakAyu_23_2,style_RuteSalmanKakAyu_23_3,]
+        });
+        bounds_group.addLayer(layer_RuteSalmanKakAyu_23);
+        map.addLayer(layer_RuteSalmanKakAyu_23);
+        function pop_RuteErlinKakAyu_24(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIST_KM'] !== null ? autolinker.link(feature.properties['DIST_KM'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DURATION_H'] !== null ? autolinker.link(feature.properties['DURATION_H'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PROFILE'] !== null ? autolinker.link(feature.properties['PROFILE'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PREF'] !== null ? autolinker.link(feature.properties['PREF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPTIONS'] !== null ? autolinker.link(feature.properties['OPTIONS'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FROM_ID'] !== null ? autolinker.link(feature.properties['FROM_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TO_ID'] !== null ? autolinker.link(feature.properties['TO_ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_RuteErlinKakAyu_24_0() {
+            return {
+                pane: 'pane_RuteErlinKakAyu_24',
+                opacity: 1,
+                color: 'rgba(255,255,255,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 23.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteErlinKakAyu_24_1() {
+            return {
+                pane: 'pane_RuteErlinKakAyu_24',
+                opacity: 1,
+                color: 'rgba(173,68,71,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 15.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        function style_RuteErlinKakAyu_24_2() {
+            return {
+                pane: 'pane_RuteErlinKakAyu_24',
+                interactive: true,
+            }
+        }
+        function style_RuteErlinKakAyu_24_3() {
+            return {
+                pane: 'pane_RuteErlinKakAyu_24',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_RuteErlinKakAyu_24');
+        map.getPane('pane_RuteErlinKakAyu_24').style.zIndex = 424;
+        map.getPane('pane_RuteErlinKakAyu_24').style['mix-blend-mode'] = 'normal';
+        var layer_RuteErlinKakAyu_24 = new L.geoJson.multiStyle(json_RuteErlinKakAyu_24, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_RuteErlinKakAyu_24',
+            layerName: 'layer_RuteErlinKakAyu_24',
+            pane: 'pane_RuteErlinKakAyu_24',
+            onEachFeature: pop_RuteErlinKakAyu_24,
+            styles: [style_RuteErlinKakAyu_24_0,style_RuteErlinKakAyu_24_1,style_RuteErlinKakAyu_24_2,style_RuteErlinKakAyu_24_3,]
+        });
+        bounds_group.addLayer(layer_RuteErlinKakAyu_24);
+        map.addLayer(layer_RuteErlinKakAyu_24);
+        setBounds();
+        var i = 0;
+        layer_Koordinatanggotakelompok_1.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['field_3'] !== null?String('<div style="color: #fdbf6f; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['field_3']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_Koordinatanggotakelompok_1'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_KoordinatKakDendi_2.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['field_3'] !== null?String('<div style="color: #fef600; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['field_3']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_KoordinatKakDendi_2'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_KoordinatKakAyu_3.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['field_3'] !== null?String('<div style="color: #fef600; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['field_3']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_KoordinatKakAyu_3'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        resetLabels([layer_Koordinatanggotakelompok_1,layer_KoordinatKakDendi_2,layer_KoordinatKakAyu_3]);
+        map.on("zoomend", function(){
+            resetLabels([layer_Koordinatanggotakelompok_1,layer_KoordinatKakDendi_2,layer_KoordinatKakAyu_3]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_Koordinatanggotakelompok_1,layer_KoordinatKakDendi_2,layer_KoordinatKakAyu_3]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_Koordinatanggotakelompok_1,layer_KoordinatKakDendi_2,layer_KoordinatKakAyu_3]);
+        });
+        </script>
+    </body>
+</html>
